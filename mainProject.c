@@ -6,9 +6,23 @@
 
 #define MAX_STRING_SIZE 151
 #define MAX_NUM_PLAYERS 4
+#define MAX_STACK_SIZE 10
 
 
 // Setup for data structures
+
+/*
+* 
+* 
+* REMINDERS
+* SETUP PROTOTYPES FOR EVERY FUNCTION!
+* 
+* MAKE SURE YOU FREE MEMORY AFTER THE PROJECT IS DONE!!!!!
+* 
+* 
+*/
+
+// Player Turn List
 typedef struct PlayerTurnList
 {
 	int playerRotationNumber;
@@ -31,9 +45,29 @@ PlayerTurnList* CreateNewNode(int newPlayerRotationNumber, char playerName[MAX_S
 	return newPlayerNode;
 }
 
-void InsertNewNodeAtTheBeginning(int nodeId, char playerName[MAX_STRING_SIZE], PlayerTurnList** head, PlayerTurnList** tail)
+
+// Player Turn List
+void InsertNewNodeAtTheEnd(int newPlayerRotationNumber, char playerName[MAX_STRING_SIZE], PlayerTurnList** head, PlayerTurnList** tail) // Insert a new head
 {
-	PlayerTurnList* newNode = CreateNewNode(nodeId, playerName); // Make a new node
+	PlayerTurnList* newNode = CreateNewNode(newPlayerRotationNumber, playerName); // New node!
+
+	if (*head == NULL) // Head null, all empty, new node is both head and tail!
+	{
+		newNode->NextNode = newNode;
+		*head = newNode;
+		*tail = newNode;
+		return;
+	}
+
+	(*tail)->NextNode = newNode; // The tail needs to point to the new node since it will be the new head
+	newNode->NextNode = *head; // The newnode is the new tail, tell it to go back to the head since it was created null
+	*tail = newNode; // The tail can now be the new node
+}
+
+
+void insertNewPlayerTurnNodeBeginning(int newPlayerRotationNumber, char playerName[MAX_STRING_SIZE], PlayerTurnList** head, PlayerTurnList** tail)
+{
+	PlayerTurnList* newNode = CreateNewNode(newPlayerRotationNumber, playerName); // Make a new node
 
 	if (*head == NULL) // Is the head null?
 	{
@@ -48,6 +82,7 @@ void InsertNewNodeAtTheBeginning(int nodeId, char playerName[MAX_STRING_SIZE], P
 	(*tail)->NextNode = *head;
 }
 
+// Player Turn List
 void PrintList(PlayerTurnList* head)
 {
 	if (head == NULL) // Its empty if the head is null
@@ -67,9 +102,66 @@ void PrintList(PlayerTurnList* head)
 }
 
 
+// Player rolls stacks
+typedef struct PlayerRolls
+{
+	int* rolls;
+	int topIndex;
+} PlayerRolls;
+
+PlayerRolls* initializePlayerRolls(void)
+{
+	// Allocate memory for the stack variable
+	PlayerRolls* stack = (PlayerRolls*)malloc(sizeof(PlayerRolls));
+	if (stack == NULL)
+	{
+		printf("No memory to initialize stack, exiting.");
+		exit(EXIT_FAILURE);
+	}
+
+	// allocate memory for the integer array
+	stack->rolls = (int*)malloc(sizeof(int) * MAX_STACK_SIZE);
+
+	if (stack->rolls == NULL)
+	{
+		printf("No memory to initialize stack data member, exiting.");
+		exit(EXIT_FAILURE);
+	}
+
+	// This sets the topIndex (the last item) to -1 
+	// Defaults to -1 to show the stack is EMPTY, since topIndex 0 would mean there is something at 0
+	// In the array of ints
+
+	// Create a function that will generate random numbers for the stack rolls
+
+
+
+	stack->topIndex = -1;
+	return stack;
+}
+
+void randomTesting(int numbers[])
+{
+	srand(time(NULL)); // Seed the random number generator with current time
+
+	int generatedNumbers[10]; // Array to store the generated numbers
+
+	// Generate and store 10 random numbers between 1 and 4
+	for (int i = 0; i < 10; ++i)
+	{
+		numbers[i] = rand() % 10 + 1; // Generate a random number between 1 and 4
+	}
+
+	// Print the generated numbers
+	printf("Generated numbers:\n");
+	for (int i = 0; i < 10; ++i)
+	{
+		printf("%d\n", generatedNumbers[i]);
+	}
+}
+
 int getIntFromUser(void);
 void clearCarriageReturn(char buffer[]);
-
 void setupPlayerNames(char nameArray[][MAX_STRING_SIZE], int playerCount);
 
 int main(void)
@@ -82,6 +174,7 @@ int main(void)
 	"Player Four"
 	};
 
+	// Player turns:
 	PlayerTurnList* head = NULL;
 	PlayerTurnList* tail = NULL;
 
@@ -107,35 +200,15 @@ int main(void)
 		//}
 	}
 
-	// Setup the player rotation in the circular linked list
-	switch (numberOfPlayers)
-	{
-	case 2:
-		printf("Setting up game for 2 players!\n");
-		setupPlayerNames(playerNames, numberOfPlayers);
 
-		for (int i = 0; i < numberOfPlayers; i++)
-		{
-			InsertNewNodeAtTheBeginning(i, playerNames[i], &head, &tail);
-		}
-		break;
-	case 3:
-		printf("Setting up game for 3 players!\n");
-		setupPlayerNames(playerNames, numberOfPlayers);
-		break;
-	case 4:
-		printf("Setting up game for 4 players!\n");
-		setupPlayerNames(playerNames, numberOfPlayers);
-		break;
-	default:
-		break;
+	printf("Setting up game for %d players!\n", numberOfPlayers);
+	setupPlayerNames(playerNames, numberOfPlayers);
+
+	for (int i = 0; i < numberOfPlayers; i++)
+	{
+		InsertNewNodeAtTheEnd(i, playerNames[i], &head, &tail);
 	}
 
-	// Uncomment to check names
-	//for (int i = 0; i < numberOfPlayers; i++)
-	//{
-	//	printf("Name %d: %s\n", i, playerNames[i]);
-	//}
 	
 	PrintList(head);
 
@@ -169,32 +242,28 @@ void clearCarriageReturn(char buffer[])
 
 void setupPlayerNames(char nameArray[][MAX_STRING_SIZE], int playerCount)
 {
-	int realPlayerCount = 1;
+	int realPlayerCount = 1; // Not needed (used for printout debugging)
 
 	for (int i = 0; i < playerCount; i++)
 	{
-		printf("Count: %d\n", realPlayerCount);
+		//printf("Count: %d\n", realPlayerCount);
 		printf("Enter player %d name: \n", realPlayerCount);
 
 		char userInput[MAX_STRING_SIZE] = { "\0" };
 		char userName[MAX_STRING_SIZE] = { "\0" };
 
-		fgets(userInput, MAX_STRING_SIZE, stdin);
-
-		while (sscanf(userInput, "%s", &nameArray[i]) != 1)
+		printf("Enter the URL of the web page (max %i characters): ", MAX_STRING_SIZE - 1);
+		fgets(userName, MAX_STRING_SIZE, stdin);
+		clearCarriageReturn(userName);
+		while (userName[0] == '\n' || userName[0] == '\0' || userName[0] == ' ')
 		{
-			printf("Invalid entry, try again: ");
-			fgets(userInput, MAX_STRING_SIZE, stdin);
+			printf("Must be a valid URL (max %i characters): ", MAX_STRING_SIZE - 1);
+			fgets(userName, MAX_STRING_SIZE, stdin);
 		}
-
-		clearCarriageReturn(nameArray[i]);
-
-		//clearCarriageReturn(userName);
 		
-		//strcpy(nameArray[i], userName);
+		strcpy(nameArray[i], userName);
 
-		//printf("NAME in ARRAY: %s\n", nameArray[i]);
 
-		realPlayerCount++;
+		realPlayerCount++; // Not needed
 	}
 }
