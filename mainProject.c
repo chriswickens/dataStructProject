@@ -8,6 +8,7 @@
 #define MAX_STRING_SIZE 151
 #define MAX_NUM_PLAYERS 4
 #define MAX_STACK_SIZE 10
+#define NUMBER_OF_ROUNDS 10
 
 
 // Setup for data structures
@@ -28,12 +29,13 @@ typedef struct PlayerTurnList
 {
 	int playerRotationNumber;
 	char playerName[MAX_STRING_SIZE];
-
+	struct PlayerRolls* generatedRolls;
 	struct Node* NextNode;
 } PlayerTurnList;
 
 
 // Player rolls stacks (stack)
+// Each stack created just contains the rolls for the player
 typedef struct PlayerRolls
 {
 	int* rolls;
@@ -41,32 +43,12 @@ typedef struct PlayerRolls
 } PlayerRolls;
 
 
-//void randomTesting(int numbers[])
-//{
-//	srand(time(NULL)); // Seed the random number generator with current time
-//
-//	int generatedNumbers[10]; // Array to store the generated numbers
-//
-//	// Generate and store 10 random numbers between 1 and 4
-//	for (int i = 0; i < 10; ++i)
-//	{
-//		numbers[i] = rand() % 10 + 1; // Generate a random number between 1 and 4
-//	}
-//
-//	// Print the generated numbers
-//	printf("Generated numbers:\n");
-//	for (int i = 0; i < 10; ++i)
-//	{
-//		printf("%d\n", generatedNumbers[i]);
-//	}
-//}
-
 PlayerRolls* initializePlayerRolls(void);
 PlayerTurnList* CreateNewNode(int newPlayerRotationNumber, char playerName[MAX_STRING_SIZE]);
 
 void InsertNewPlayerAtEnd(int newPlayerRotationNumber, char playerName[MAX_STRING_SIZE], PlayerTurnList** head, PlayerTurnList** tail);
 void PrintList(PlayerTurnList* head);
-void Push(PlayerRolls* stack/*, int elementToAdd*/);
+void Push(PlayerRolls* stack, int elementToAdd);
 void printStack(PlayerRolls* stack);
 bool isStackEmpty(PlayerRolls* stack);
 bool isStackFull(PlayerRolls* stack);
@@ -76,9 +58,20 @@ void clearCarriageReturn(char buffer[]);
 void setupPlayerNames(char nameArray[][MAX_STRING_SIZE], int playerCount);
 
 
+int randomNumberGenerator();
+
+void PushTheRolls(PlayerRolls* stack);
+
+
 int main(void)
 {
 	srand(time(NULL)); // seed for random numbers
+
+	//printf("\n\nTESING\n\n");
+	//for (int i = 0; i < 10; i++)
+	//{
+	//	printf("Random: %d\n", randomNumberGenerator());
+	//}
 
 	char playerNames[MAX_NUM_PLAYERS][MAX_STRING_SIZE] =
 	{
@@ -94,9 +87,30 @@ int main(void)
 
 
 	// TESTING OUT THE PLAYER ROLLS STACK
+	// 
+	// 
+
+
+	//PlayerRolls* rollStack = initializePlayerRolls();
+	//Push(rollStack);
+	//printStack(rollStack);
+
+
+
 	PlayerRolls* playerOneRolls = initializePlayerRolls();
-	Push(playerOneRolls);
+	PushTheRolls(playerOneRolls);
+	printStack(playerOneRolls);
+
+	//PlayerRolls* playerTwoRolls = initializePlayerRolls();
+	//Push(playerTwoRolls);
+	//PlayerRolls* playerThreeRolls = initializePlayerRolls();
+	//Push(playerThreeRolls);
+	//PlayerRolls* playerFourRolls = initializePlayerRolls();
+	//Push(playerFourRolls);
 	//printStack(playerOneRolls);
+	//printStack(playerTwoRolls);
+	//printStack(playerThreeRolls);
+	//printStack(playerFourRolls);
 
 	// Game starts, determine how many player there are
 	printf("How many players would you like for this game? (2-4 players)\n");
@@ -117,17 +131,37 @@ int main(void)
 
 
 	printf("Setting up game for %d players!\n", numberOfPlayers);
+
+	// Get player names
 	setupPlayerNames(playerNames, numberOfPlayers);
 
+	//Insert the players into the circular list
 	for (int i = 0; i < numberOfPlayers; i++)
 	{
 		InsertNewPlayerAtEnd(i, playerNames[i], &head, &tail);
 	}
 
 
+
 	PrintList(head);
 
 	return 0;
+}
+
+
+
+void PushTheRolls(PlayerRolls* stack)
+{
+	if (isStackFull(stack))
+	{
+		printf("!!!!! PUSHTHEROLLS() ERROR, STACK IS FULL\n");
+		return;
+	}
+
+	for (int i = 0; i < MAX_STACK_SIZE; i++)
+	{
+		Push(stack, randomNumberGenerator());
+	}
 }
 
 
@@ -140,7 +174,11 @@ PlayerTurnList* CreateNewNode(int newPlayerRotationNumber, char playerName[MAX_S
 		exit(EXIT_FAILURE);
 	}
 
+
+
+
 	newPlayerNode->playerRotationNumber = newPlayerRotationNumber;
+
 	strcpy(newPlayerNode->playerName, playerName);
 	newPlayerNode->NextNode = NULL;
 	return newPlayerNode;
@@ -214,26 +252,30 @@ PlayerRolls* initializePlayerRolls(void) // (Stack)
 	//{
 	//	stack->rolls[i] = rand() % 10 + 1;
 	//}
-
+		// Generate and store 10 random numbers in the rolls array
+	//for (int i = 0; i < MAX_STACK_SIZE; i++)
+	//{
+	//	stack->rolls[i] = randomNumberGenerator();
+	//}
 	stack->topIndex = -1;
 	return stack;
 }
 
-void Push(PlayerRolls* stack/*, int elementToAdd*/)
+void Push(PlayerRolls* stack, int elementToAdd)
 {
-	//if (originalFullCheck(stack))
-	//{
-	//	printf("Stack Overflow Exception");
-	//	exit(EXIT_FAILURE);
-	//}
-
-	for (int i = 0; i < MAX_STACK_SIZE; i++)
+	if (isStackFull(stack))
 	{
-		int thisRandomNumber = rand() % 10 + 1;
-
-
-		stack->rolls[++stack->topIndex] = thisRandomNumber;
+		printf("Stack Overflow Exception");
+		exit(EXIT_FAILURE);
 	}
+
+	//for (int i = 0; i < MAX_STACK_SIZE; i++)
+	//{
+	//int thisRandomNumber = rand() % 10 + 1;
+
+
+	stack->rolls[++stack->topIndex] = elementToAdd;
+	//}
 	//int thisRandomNumber = rand() % 10 + 1;
 
 
@@ -249,17 +291,17 @@ void printStack(PlayerRolls* stack)
 
 	else
 	{
-	printf("---PrintOut:---\n");
-	int stackTop = stack->topIndex;
+		printf("---PrintOut:---\n");
+		int stackTop = stack->topIndex;
 
-	while (stackTop >= 0)
-	{
-		//int index = stack->topIndex;
-		printf("Stack element :  %i Index: %-8i \n", stack->rolls[stackTop], stackTop);
-		stackTop--;
+		while (stackTop >= 0)
+		{
+			//int index = stack->topIndex;
+			printf("Stack element :  %i Index: %-8i \n", stack->rolls[stackTop], stackTop);
+			stackTop--;
 
-	}
-	printf("---End of PrintOut---\n\n");
+		}
+		printf("---End of PrintOut---\n\n");
 	}
 
 }
@@ -287,6 +329,16 @@ int getIntFromUser(void)
 	}
 
 	return inputAsInt;
+}
+
+int randomNumberGenerator()
+{
+	//srand(time(NULL)); // Seed the random number generator with current time
+
+	// Generate and store 10 random numbers between 1 and 4
+
+	return rand() % 10 + 1; // Generate a random number between 1 and 4
+
 }
 
 void clearCarriageReturn(char buffer[])
