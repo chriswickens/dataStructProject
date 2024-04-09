@@ -135,30 +135,24 @@ int main(void)
 	// Get player names
 	setupPlayerNames(playerNames, numberOfPlayers);
 
-	//Insert the players into the circular list
-	//for (int i = 0; i < numberOfPlayers; i++)
-	//{
-	//	InsertNewPlayerAtEnd(i, playerNames[i], &head, &tail);
-	//}
-	// 
 
 
 
 	// Insert the players into the circular list and assign rolls
 	// break out into function later
-	for (int i = 0; i < numberOfPlayers; i++)
-	{
-		// Create a new PlayerRolls stack and push rolls onto it
-		PlayerRolls* playerRolls = initializePlayerRolls();
-		PushTheRolls(playerRolls);
+	//for (int i = 0; i < numberOfPlayers; i++)
+	//{
+	//	// Create a new PlayerRolls stack and push rolls onto it
+	//	PlayerRolls* playerRolls = initializePlayerRolls();
+	//	PushTheRolls(playerRolls);
 
-		// Create a new PlayerTurnList node and assign the player's stack
-		PlayerTurnList* playerNode = CreateNewNode(i, playerNames[i]);
-		playerNode->generatedRolls = playerRolls;
+	//	// Create a new PlayerTurnList node and assign the player's stack
+	//	PlayerTurnList* playerNode = CreateNewNode(i, playerNames[i]);
+	//	playerNode->generatedRolls = playerRolls;
 
-		// Insert the player into the circular list
-		InsertNewPlayerAtEnd(i, playerNames[i], &head, &tail);
-	}
+	//	// Insert the player into the circular list
+	//	InsertNewPlayerAtEnd(i, playerNames[i], &head, &tail);
+	//}
 
 
 
@@ -172,8 +166,30 @@ int main(void)
 	//} while (current != head);
 
 
+	//Insert the players into the circular list
+	for (int i = 0; i < numberOfPlayers; i++)
+	{
+		InsertNewPlayerAtEnd(i, playerNames[i], &head, &tail);
+	}
+
+
+
+	// Generation testing!
+
+	PlayerTurnList* thisCurrent = head;
+
+	do
+	{
+		printf("Generating rolls for %s: ", thisCurrent->playerName);
+		thisCurrent->generatedRolls = initializePlayerRolls();
+		PushTheRolls(thisCurrent->generatedRolls);
+		thisCurrent = thisCurrent->NextNode;
+	} while (thisCurrent != head);
+
+	//head->generatedRolls = initializePlayerRolls();
+	//PushTheRolls(head->generatedRolls);
 	PrintList(head);
-	printStack(head->generatedRolls);
+	//printStack(head->generatedRolls);
 
 	return 0;
 }
@@ -247,6 +263,7 @@ void PrintList(PlayerTurnList* head)
 	do
 	{
 		printf("Current Player: %s, rotation Number: %d\n", current->playerName, current->playerRotationNumber);
+		printStack(current->generatedRolls);
 		current = current->NextNode;
 	} while (current != head);
 
