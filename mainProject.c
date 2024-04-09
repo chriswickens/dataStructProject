@@ -97,9 +97,9 @@ int main(void)
 
 
 
-	PlayerRolls* playerOneRolls = initializePlayerRolls();
-	PushTheRolls(playerOneRolls);
-	printStack(playerOneRolls);
+	//PlayerRolls* playerOneRolls = initializePlayerRolls();
+	//PushTheRolls(playerOneRolls);
+	//printStack(playerOneRolls);
 
 	//PlayerRolls* playerTwoRolls = initializePlayerRolls();
 	//Push(playerTwoRolls);
@@ -136,14 +136,44 @@ int main(void)
 	setupPlayerNames(playerNames, numberOfPlayers);
 
 	//Insert the players into the circular list
+	//for (int i = 0; i < numberOfPlayers; i++)
+	//{
+	//	InsertNewPlayerAtEnd(i, playerNames[i], &head, &tail);
+	//}
+	// 
+
+
+
+	// Insert the players into the circular list and assign rolls
+	// break out into function later
 	for (int i = 0; i < numberOfPlayers; i++)
 	{
+		// Create a new PlayerRolls stack and push rolls onto it
+		PlayerRolls* playerRolls = initializePlayerRolls();
+		PushTheRolls(playerRolls);
+
+		// Create a new PlayerTurnList node and assign the player's stack
+		PlayerTurnList* playerNode = CreateNewNode(i, playerNames[i]);
+		playerNode->generatedRolls = playerRolls;
+
+		// Insert the player into the circular list
 		InsertNewPlayerAtEnd(i, playerNames[i], &head, &tail);
 	}
 
 
 
+	//// Print out the circular list and each player's rolls
+	//PlayerTurnList* current = head;
+	//do
+	//{
+	//	printf("Player: %s\n", current->playerName);
+	//	printStack(current->generatedRolls);
+	//	current = current->NextNode;
+	//} while (current != head);
+
+
 	PrintList(head);
+	printStack(head->generatedRolls);
 
 	return 0;
 }
