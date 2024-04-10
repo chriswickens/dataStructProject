@@ -9,6 +9,7 @@
 #define MAX_NUM_PLAYERS 4
 #define MAX_STACK_SIZE 10
 #define NUMBER_OF_ROUNDS 10
+#define HASH_TABLE_SIZE 20
 
 
 // Setup for data structures
@@ -30,8 +31,14 @@ typedef struct PlayerTurnList
 	int playerRotationNumber;
 	char playerName[MAX_STRING_SIZE];
 	struct PlayerRolls* generatedRolls;
-	struct Node* NextNode;
+	struct PlayerTurnList* NextNode;
 } PlayerTurnList;
+
+typedef struct GameResults // Used for storing the game results
+{
+	int score;
+	char playerName[MAX_STRING_SIZE];
+} GameResults;
 
 
 // Player rolls stacks (stack)
@@ -41,6 +48,20 @@ typedef struct PlayerRolls
 	int* rolls;
 	int topIndex;
 } PlayerRolls;
+
+
+// Hash table structs
+typedef struct KeyValuePair // The main key/value pair
+{
+	char* key;
+	char* value;
+	struct KeyValuePair* NextKeyValuePair;
+} KeyValuePair;
+
+typedef struct HashTable // The hash TABLE where key/value pairs are stored (array of KeyValuePair)
+{
+	KeyValuePair* Table[HASH_TABLE_SIZE];
+} HashTable;
 
 
 PlayerRolls* initializePlayerRolls(void);
@@ -66,6 +87,69 @@ int randomNumberGenerator();
 
 void PushTheRolls(PlayerRolls* stack);
 
+void InsertNewPlayerSorted(int newPlayerRotationNumber, char playerName[MAX_STRING_SIZE], PlayerTurnList** head, PlayerTurnList** tail);
+
+
+// HASH specific
+int GenerateHash(char* word);
+KeyValuePair* InitializeKeyValuePair(char* key, char* value);
+HashTable* InitializeHashTable(void);
+char* SearchHashTable(HashTable* hashTable, char* keyToFind);
+void InsertSeparateChaining(HashTable* hashTable, char* key, char* value);
+
+char* getHashName(char valueToChar[], HashTable* hashTable);
+
+char* getHashName(char valueToChar[], HashTable* hashTable)
+{
+	int test = atoi(valueToChar);
+	switch (test)
+	{
+	case 1:
+		//printf("Result for %d: %s\n", test, SearchHashTable(hashTable, "1"));
+		return SearchHashTable(hashTable, "1");
+		break;
+	case 2:
+		//printf("Result for %d: %s\n", test, SearchHashTable(hashTable, "2"));
+		return SearchHashTable(hashTable, "2");
+		break;
+	case 3:
+		//printf("Result for %d: %s\n", test, SearchHashTable(hashTable, "3"));
+		return SearchHashTable(hashTable, "3");
+		break;
+	case 4:
+		//printf("Result for %d: %s\n", test, SearchHashTable(hashTable, "4"));
+		return SearchHashTable(hashTable, "4");
+		break;
+	case 5:
+		//printf("Result for %d: %s\n", test, SearchHashTable(hashTable, "5"));
+		return SearchHashTable(hashTable, "5");
+		break;
+	case 6:
+		//printf("Result for %d: %s\n", test, SearchHashTable(hashTable, "6"));
+		return SearchHashTable(hashTable, "6");
+		break;
+	case 7:
+		//printf("Result for %d: %s\n", test, SearchHashTable(hashTable, "7"));
+		return SearchHashTable(hashTable, "7");
+		break;
+	case 8:
+		//printf("Result for %d: %s\n", test, SearchHashTable(hashTable, "8"));
+		return SearchHashTable(hashTable, "8");
+		break;
+	case 9:
+		//printf("Result for %d: %s\n", test, SearchHashTable(hashTable, "9"));
+		return SearchHashTable(hashTable, "9");
+		break;
+	case 10:
+		//printf("Result for %d: %s\n", test, SearchHashTable(hashTable, "10"));
+		return SearchHashTable(hashTable, "10");
+		break;
+
+	default:
+		break;
+	}
+}
+
 
 int main(void)
 {
@@ -88,6 +172,21 @@ int main(void)
 	// Player turns:
 	PlayerTurnList* head = NULL;
 	PlayerTurnList* tail = NULL;
+
+	// Initialize hashTable
+	HashTable* hashTable = InitializeHashTable();
+	InsertSeparateChaining(hashTable, "1", "a baby");
+	InsertSeparateChaining(hashTable, "2", "a child");
+	InsertSeparateChaining(hashTable, "3", "teenager");
+	InsertSeparateChaining(hashTable, "4", "adult");
+	InsertSeparateChaining(hashTable, "5", "dwarf");
+	InsertSeparateChaining(hashTable, "6", "elf");
+	InsertSeparateChaining(hashTable, "7", "horse");
+	InsertSeparateChaining(hashTable, "8", "griffin");
+	InsertSeparateChaining(hashTable, "9", "freight train");
+	InsertSeparateChaining(hashTable, "10", "dragon");
+
+	getHashName("1", hashTable);
 
 
 	// TESTING OUT THE PLAYER ROLLS STACK
@@ -173,7 +272,9 @@ int main(void)
 	//Insert the players into the circular list
 	for (int i = 0; i < numberOfPlayers; i++)
 	{
-		InsertNewPlayerAtEnd(i, playerNames[i], &head, &tail);
+		int value = rand() % (4 + 1);
+		//InsertNewPlayerAtEnd(i, playerNames[i], &head, &tail);
+		InsertNewPlayerSorted(value, playerNames[i], &head, &tail);
 	}
 
 
@@ -188,7 +289,7 @@ int main(void)
 		thisCurrent->generatedRolls = initializePlayerRolls();
 		PushTheRolls(thisCurrent->generatedRolls);
 		thisCurrent = thisCurrent->NextNode;
-	} while (thisCurrent != head);
+	} while (thisCurrent != NULL);
 
 	//head->generatedRolls = initializePlayerRolls();
 	//PushTheRolls(head->generatedRolls);
@@ -196,37 +297,51 @@ int main(void)
 	//printStack(head->generatedRolls);
 
 
-	int count = 0;
-	while (count != NUMBER_OF_ROUNDS)
+	int roundNumber = 0;
+	while (roundNumber != NUMBER_OF_ROUNDS) // Continue based on number of rounds
 	{
-		printf("Doing turn: %d!\n", count + 1); // Count the turns
+		printf("\nDoing turn: %d!\n", roundNumber + 1); // Count the turns
 
-		PlayerTurnList* currentTurn = head;
-		do
+		int winningNumber = 0; // Storage for each rounds winning number
+		char winningName[MAX_STRING_SIZE] = { "\0" }; // Storage for each rounds winning name
+
+		PlayerTurnList* currentTurn = head; // To iterate over the players in the turn list
+		
+		while(currentTurn != NULL) // do/while until the currentTurn is = to the head (circular linked list)
 		{
-			int winningNumber = 0;
-			char winningName[MAX_STRING_SIZE] = { "\0" };
+			// Debug printout
+			printf("Player %s, value popped: %d\n", currentTurn->playerName, peek(currentTurn->generatedRolls));
 
-			for (int i = 0; i < numberOfPlayers; i++)
+			// If the winning number is less than the CURRENT players first roll
+			if (winningNumber < peek(currentTurn->generatedRolls))
 			{
-				printf("Player %s, current value %d\n", currentTurn->playerName, peek(currentTurn->generatedRolls));
+				// Pop the number off of their stack, and save it and their name
 				winningNumber = pop(currentTurn->generatedRolls);
-				printf("Winning Number: %d\n", winningNumber);
-				currentTurn = currentTurn->NextNode;
-	
+				strcpy(winningName, currentTurn->playerName);
 			}
 
-			//printf("Winner: %s - Winning Value: %d", winningName, winningNumber);
-			count++;
-			//printf("Player %s, POPPED value %d\n", currentTurn->playerName, pop(currentTurn->generatedRolls)); // Pop first player turn
-			//// Need to compare the values of EACH player by going one by one through the currentTurn
+			// Otherwise their number was not the winning number, just pop their value so it's removed
+			else
+			{
+				pop(currentTurn->generatedRolls);
+			}
 
+			currentTurn = currentTurn->NextNode; // Step into the next player
 
-			//currentTurn = currentTurn->NextNode; // Advance to next player
-			//printf("Player %s, POPPED value %d\n", currentTurn->playerName, pop(currentTurn->generatedRolls));
-			//currentTurn = currentTurn->NextNode; // Advance to next turn
-			//count++;
-		} while (currentTurn != head);
+		} /*while (currentTurn != NULL)*/;
+
+		
+
+		// Conversion of integer winning number to a string to get the hash value
+		char numToStr[3] = { "\0" };
+		sprintf(numToStr, "%d", winningNumber);
+		//getHashName(numToStr, hashTable);
+		printf("%s DESTROYED everyone with a : %s\n", winningName, getHashName(numToStr, hashTable));
+
+		printf("Round Winner: %s, winning value: %d\n", winningName, winningNumber); // Who won the round?
+		// Code here for pushing the wins onto the stack
+
+		roundNumber++; // Increment the round number
 	}
 
 	return 0;
@@ -287,6 +402,48 @@ void InsertNewPlayerAtEnd(int newPlayerRotationNumber, char playerName[MAX_STRIN
 	*tail = newNode; // The tail can now be the new node
 }
 
+
+void InsertNewPlayerSorted(int newPlayerRotationNumber, char playerName[MAX_STRING_SIZE], PlayerTurnList** head, PlayerTurnList** tail)
+{
+	PlayerTurnList* newNode = CreateNewNode(newPlayerRotationNumber, playerName); // Create a new node
+
+	if (*head == NULL || newPlayerRotationNumber < (*head)->playerRotationNumber)
+	{
+		// If the list is empty or the new node should be inserted before the head
+		newNode->NextNode = *head;
+		*head = newNode;
+		if (*tail == NULL)
+		{
+			// If the list was empty, update tail
+			*tail = newNode;
+		}
+		else if (newPlayerRotationNumber > (*tail)->playerRotationNumber)
+		{
+			// If the new node should be inserted after the tail, update tail
+			(*tail)->NextNode = newNode;
+			*tail = newNode;
+		}
+		return;
+	}
+
+	PlayerTurnList* current = *head;
+	while (current->NextNode != NULL && current->NextNode->playerRotationNumber < newPlayerRotationNumber)
+	{
+		// Traverse the list until finding the correct position
+		current = current->NextNode;
+	}
+
+	// Insert the new node between current and current->NextNode
+	newNode->NextNode = current->NextNode;
+	current->NextNode = newNode;
+
+	if (newNode->NextNode == NULL)
+	{
+		// If the new node is inserted at the end, update tail
+		*tail = newNode;
+	}
+}
+
 // Player Turn List
 void PrintList(PlayerTurnList* head)
 {
@@ -303,7 +460,7 @@ void PrintList(PlayerTurnList* head)
 		printf("Current Player: %s, rotation Number: %d\n", current->playerName, current->playerRotationNumber);
 		printStack(current->generatedRolls);
 		current = current->NextNode;
-	} while (current != head);
+	} while (current != NULL);
 
 }
 
@@ -483,4 +640,104 @@ void setupPlayerNames(char nameArray[][MAX_STRING_SIZE], int playerCount)
 
 		realPlayerCount++; // Not needed
 	}
+}
+
+
+int GenerateHash(char* word)
+{
+	int hash = 0;
+	for (int i = 0; word[i] != '\0'; i++)
+	{
+		int asciiValue = word[i];
+		hash = (hash + (asciiValue)) % HASH_TABLE_SIZE;
+	}
+
+	return hash;
+}
+
+
+
+KeyValuePair* InitializeKeyValuePair(char* key, char* value)
+{
+	KeyValuePair* newKeyValuePair = (KeyValuePair*)malloc(sizeof(KeyValuePair)); // Allocate memory for a new KeyValuePair
+
+	if (newKeyValuePair == NULL)
+	{
+		printf("EOM");
+		exit(EXIT_FAILURE);
+	}
+
+	newKeyValuePair->key = strdup(key); // strdup() makes a pointer string, and copies the data to that memory location (key would contain the "word", but a copy in memory)
+	newKeyValuePair->value = strdup(value);
+	newKeyValuePair->NextKeyValuePair = NULL;
+	return newKeyValuePair;
+}
+
+HashTable* InitializeHashTable(void)
+{
+	HashTable* hashTable = (HashTable*)malloc(sizeof(HashTable)); // Allocate memory for the HashTable
+
+	if (hashTable == NULL) // If it's null, no memory
+	{
+		printf("EOM");
+		exit(EXIT_FAILURE);
+	}
+
+	for (int i = 0; i < HASH_TABLE_SIZE; i++) // Iterate over the hashTable TABLE and initialize all values to NULL
+	{
+		hashTable->Table[i] = NULL;
+	}
+
+	return hashTable;
+}
+
+
+
+char* SearchHashTable(HashTable* hashTable, char* keyToFind)
+{
+	int hash = GenerateHash(keyToFind);
+
+	if (hashTable->Table[hash] == NULL)
+	{
+		return "ERROR: cannot find the Key in the table!";
+	}
+
+	KeyValuePair* current = hashTable->Table[hash];
+
+	/*if(current->NextKeyValuePair == NULL && strcmp(current->Word, word) == 0){
+		return current->Synonym;
+	}*/
+
+	while (current != NULL)
+	{
+		if (strcmp(current->key, keyToFind) == 0)
+		{
+			return current->value;
+		}
+		current = current->NextKeyValuePair;
+	}
+
+	return "ERROR: cannot find the Key in the table!";
+}
+
+void InsertSeparateChaining(HashTable* hashTable, char* key, char* value)
+{
+	KeyValuePair* kvp = InitializeKeyValuePair(key, value); // Initialize the key/value pair passed in
+
+	int hash = GenerateHash(key); // Generate an int hash for the key provided (one, two, three etc.)
+
+	if (hashTable->Table[hash] == NULL) // If the table location which uses the hash is empty
+	{
+		hashTable->Table[hash] = kvp; // Assign the KvP to the specified table index (based on hash int)
+		return;
+	}
+
+	// If there was a collision
+	KeyValuePair* current = hashTable->Table[hash];
+
+	while (current->NextKeyValuePair != NULL)
+	{
+		current = current->NextKeyValuePair;
+	}
+	current->NextKeyValuePair = kvp;
 }
