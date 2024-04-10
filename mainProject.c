@@ -49,6 +49,10 @@ PlayerTurnList* CreateNewNode(int newPlayerRotationNumber, char playerName[MAX_S
 void InsertNewPlayerAtEnd(int newPlayerRotationNumber, char playerName[MAX_STRING_SIZE], PlayerTurnList** head, PlayerTurnList** tail);
 void PrintList(PlayerTurnList* head);
 void Push(PlayerRolls* stack, int elementToAdd);
+
+int pop(PlayerRolls* stack);
+int peek(PlayerRolls* stack);
+
 void printStack(PlayerRolls* stack);
 bool isStackEmpty(PlayerRolls* stack);
 bool isStackFull(PlayerRolls* stack);
@@ -180,7 +184,7 @@ int main(void)
 
 	do
 	{
-		printf("Generating rolls for %s: ", thisCurrent->playerName);
+		printf("Generating rolls for %s: \n", thisCurrent->playerName);
 		thisCurrent->generatedRolls = initializePlayerRolls();
 		PushTheRolls(thisCurrent->generatedRolls);
 		thisCurrent = thisCurrent->NextNode;
@@ -190,6 +194,40 @@ int main(void)
 	//PushTheRolls(head->generatedRolls);
 	PrintList(head);
 	//printStack(head->generatedRolls);
+
+
+	int count = 0;
+	while (count != NUMBER_OF_ROUNDS)
+	{
+		printf("Doing turn: %d!\n", count + 1); // Count the turns
+
+		PlayerTurnList* currentTurn = head;
+		do
+		{
+			int winningNumber = 0;
+			char winningName[MAX_STRING_SIZE] = { "\0" };
+
+			for (int i = 0; i < numberOfPlayers; i++)
+			{
+				printf("Player %s, current value %d\n", currentTurn->playerName, peek(currentTurn->generatedRolls));
+				winningNumber = pop(currentTurn->generatedRolls);
+				printf("Winning Number: %d\n", winningNumber);
+				currentTurn = currentTurn->NextNode;
+	
+			}
+
+			//printf("Winner: %s - Winning Value: %d", winningName, winningNumber);
+			count++;
+			//printf("Player %s, POPPED value %d\n", currentTurn->playerName, pop(currentTurn->generatedRolls)); // Pop first player turn
+			//// Need to compare the values of EACH player by going one by one through the currentTurn
+
+
+			//currentTurn = currentTurn->NextNode; // Advance to next player
+			//printf("Player %s, POPPED value %d\n", currentTurn->playerName, pop(currentTurn->generatedRolls));
+			//currentTurn = currentTurn->NextNode; // Advance to next turn
+			//count++;
+		} while (currentTurn != head);
+	}
 
 	return 0;
 }
@@ -329,6 +367,28 @@ void Push(PlayerRolls* stack, int elementToAdd)
 	//stack->rolls[++stack->topIndex] = thisRandomNumber;
 }
 
+int pop(PlayerRolls* stack)
+{
+	if (isStackEmpty(stack)) // If the stack is empty, what's the point?
+	{
+		printf("Stack underflow exception");
+		exit(EXIT_FAILURE);
+	}
+
+	return stack->rolls[stack->topIndex--]; // Otherwise return the previous item as the new topIndex (by decrementing the topIndex!)
+}
+
+int peek(PlayerRolls* stack)
+{
+	if (isStackEmpty(stack))
+	{
+		printf("No items to view");
+		return;
+	}
+
+	return stack->rolls[stack->topIndex]; // Take a look at the top of the stack!
+}
+
 void printStack(PlayerRolls* stack)
 {
 	if (isStackEmpty(stack))
@@ -378,13 +438,12 @@ int getIntFromUser(void)
 	return inputAsInt;
 }
 
+
 int randomNumberGenerator()
 {
 	//srand(time(NULL)); // Seed the random number generator with current time
 
-	// Generate and store 10 random numbers between 1 and 4
-
-	return rand() % 10 + 1; // Generate a random number between 1 and 4
+	return rand() % 10/* + 1*/; // Generate a random number between 1 and 10
 
 }
 
