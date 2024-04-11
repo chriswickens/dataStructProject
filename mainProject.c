@@ -8,23 +8,9 @@
 
 #define MAX_STRING_SIZE 151
 #define MAX_NUM_PLAYERS 4
-#define MAX_STACK_SIZE 10
-#define NUMBER_OF_ROUNDS 10
+//#define MAX_ROLLS_GENERATED 20
+#define NUMBER_OF_ROUNDS 20
 #define HASH_TABLE_SIZE 20
-
-
-// Setup for data structures
-
-/*
-*
-*
-* REMINDERS
-* SETUP PROTOTYPES FOR EVERY FUNCTION!
-*
-* MAKE SURE YOU FREE MEMORY AFTER THE PROJECT IS DONE!!!!!
-*
-*
-*/
 
 // Player Turn List (circular array)
 typedef struct PlayerTurnList
@@ -41,15 +27,12 @@ typedef struct GameResults // Used for storing the game results
 	char playerName[MAX_STRING_SIZE];
 } GameResults;
 
-
 // Player rolls stacks (stack)
-// Each stack created just contains the rolls for the player
 typedef struct PlayerRolls
 {
 	int* rolls;
 	int topIndex;
 } PlayerRolls;
-
 
 // Hash table structs
 typedef struct KeyValuePair // The main key/value pair
@@ -97,13 +80,7 @@ int main(void)
 
 	srand(time(NULL)); // seed for random numbers
 
-	//printf("\n\nTESING\n\n");
-	//for (int i = 0; i < 10; i++)
-	//{
-	//	printf("Random: %d\n", randomNumberGenerator());
-	//}
-
-	// Player turns:
+	// Player turns
 	PlayerTurnList* head = NULL;
 	PlayerTurnList* tail = NULL;
 
@@ -138,9 +115,9 @@ int main(void)
 	//Insert the players into the circular list
 	for (int i = 0; i < numberOfPlayers; i++)
 	{
-		int value = rand() % (4 + 1);
+		int randomPlayerRotationValue = rand() % (4 + 1);
 		//InsertNewPlayerAtEnd(i, playerNames[i], &head, &tail);
-		insertNewPlayerSorted(value, playerNames[i], &head, &tail);
+		insertNewPlayerSorted(randomPlayerRotationValue, playerNames[i], &head, &tail);
 	}
 
 	// Generate rolls for players
@@ -208,6 +185,19 @@ int main(void)
 		roundNumber++; // Increment the round number
 	}
 
+	printf("Wtf?...");
+
+	// Free up the memory
+	PlayerTurnList* freeTurns = head;
+	while (freeTurns != NULL)
+	{
+		free(freeTurns->generatedRolls);
+		PlayerTurnList* temp = freeTurns;
+		freeTurns = freeTurns->NextNode;
+		free(temp);
+	}
+	free(diceRollHashTable);
+
 	return 0;
 }
 
@@ -216,15 +206,15 @@ void pushPlayerRolls(PlayerRolls* stack)
 	if (isStackFull(stack))
 	{
 		printf("!!!!! PUSHTHEROLLS() ERROR, STACK IS FULL\n");
-		return;
+		/*return;*/
+		exit(EXIT_FAILURE);
 	}
 
-	for (int i = 0; i < MAX_STACK_SIZE; i++)
+	for (int i = 0; i < MAX_DIE_SIZE; i++)
 	{
 		push(stack, randomNumberGenerator());
 	}
 }
-
 
 PlayerTurnList* createNewPlayer(int newPlayerRotationNumber, char playerName[MAX_STRING_SIZE])
 {
@@ -236,12 +226,10 @@ PlayerTurnList* createNewPlayer(int newPlayerRotationNumber, char playerName[MAX
 	}
 
 	newPlayerNode->playerRotationNumber = newPlayerRotationNumber;
-
 	strcpy(newPlayerNode->playerName, playerName);
 	newPlayerNode->NextNode = NULL;
 	return newPlayerNode;
 }
-
 
 // Player Turn List
 void insertNewPlayerAtEnd(int newPlayerRotationNumber, char playerName[MAX_STRING_SIZE], PlayerTurnList** head, PlayerTurnList** tail) // Insert a new head
@@ -260,7 +248,6 @@ void insertNewPlayerAtEnd(int newPlayerRotationNumber, char playerName[MAX_STRIN
 	newNode->NextNode = *head; // The newnode is the new tail, tell it to go back to the head since it was created null
 	*tail = newNode; // The tail can now be the new node
 }
-
 
 void insertNewPlayerSorted(int newPlayerRotationNumber, char playerName[MAX_STRING_SIZE], PlayerTurnList** head, PlayerTurnList** tail)
 {
@@ -323,7 +310,6 @@ void printPlayerTurns(PlayerTurnList* head)
 
 }
 
-
 PlayerRolls* initializePlayerRolls(void) // (Stack)
 {
 	// Allocate memory for the stack variable
@@ -335,7 +321,7 @@ PlayerRolls* initializePlayerRolls(void) // (Stack)
 	}
 
 	// allocate memory for the integer array
-	stack->rolls = (int*)malloc(sizeof(int) * MAX_STACK_SIZE);
+	stack->rolls = (int*)malloc(sizeof(int) * MAX_DIE_SIZE);
 
 	if (stack->rolls == NULL)
 	{
@@ -411,7 +397,7 @@ bool isStackEmpty(PlayerRolls* stack)
 
 bool isStackFull(PlayerRolls* stack)
 {
-	return stack->topIndex == MAX_STACK_SIZE - 1;
+	return stack->topIndex == MAX_DIE_SIZE - 1;
 }
 
 int getIntFromUser(void)
@@ -431,7 +417,7 @@ int getIntFromUser(void)
 
 int randomNumberGenerator()
 {
-	return rand() % MAX_STACK_SIZE/* + 1*/; // Generate a random number between 1 and 10
+	return rand() % MAX_DIE_SIZE/* + 1*/; // Generate a random number between 1 and 10
 }
 
 void clearCarriageReturn(char buffer[])
@@ -562,7 +548,7 @@ void insertSeparateChaining(HashTable* hashTable, char* key, char* value)
 
 void waitForInput()
 {
-	char notUsed = getch();
+	//char notUsed = getch();
 }
 
 char* convertIntToString(int valueToChange)
@@ -575,8 +561,9 @@ char* convertIntToString(int valueToChange)
 HashTable* setupHashTable()
 {
 	HashTable* tableToInitialize = initializeHashTable();
-	insertSeparateChaining(tableToInitialize, "1", "a baby");
-	insertSeparateChaining(tableToInitialize, "2", "a child");
+	insertSeparateChaining(tableToInitialize, "0", "whisp of air");
+	insertSeparateChaining(tableToInitialize, "1", "baby");
+	insertSeparateChaining(tableToInitialize, "2", "child");
 	insertSeparateChaining(tableToInitialize, "3", "teenager");
 	insertSeparateChaining(tableToInitialize, "4", "adult");
 	insertSeparateChaining(tableToInitialize, "5", "dwarf");
