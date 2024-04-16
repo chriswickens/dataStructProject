@@ -17,15 +17,15 @@ typedef struct PlayerTurnList
 {
 	int playerRotationNumber;
 	char playerName[MAX_STRING_SIZE];
-	int numberOfWins;
+	int numberOfRoundsWon;
 	struct PlayerRolls* generatedRolls;
 	struct PlayerTurnList* NextNode;
 } PlayerTurnList;
 
 typedef struct GameResults // Used for storing the game results
 {
+	//int* score;
 	int* score;
-	//int* roundNumberWon;
 	char* playerName[MAX_STRING_SIZE];
 	int stackSize;
 } GameResults;
@@ -64,7 +64,7 @@ bool isStackEmpty(PlayerRolls* stack);
 bool isStackFull(PlayerRolls* stack);
 
 GameResults* initializeGameResultsStack(void);
-void pushPlayerWin(GameResults* stack, int elementToAdd, int roundWon, char addPlayerName[]);
+void pushPlayerWin(GameResults* stack, char addPlayerName[]);
 int popPlayerWins(GameResults* stack);
 int peekPlayerWins(GameResults* stack);
 void printPlayerWinsStack(GameResults* resultStack, PlayerTurnList* playerCircular, int playerCount);
@@ -115,30 +115,30 @@ GameResults* initializeGameResultsStack(void)
 		}
 	}
 
-	//stack->roundNumberWon = (int*)malloc(sizeof(int) * NUMBER_OF_ROUNDS);
-	//if (stack->roundNumberWon == NULL)
+	//stack->score = (int*)malloc(sizeof(int) * NUMBER_OF_ROUNDS);
+	//if (stack->score == NULL)
 	//{
 	//	printf("Out of memory!\n");
 	//	exit(EXIT_FAILURE);
 	//}
 
-
+	//stack->score = 0;
 	stack->stackSize = -1;
 	return stack;
 
 }
 
-void pushPlayerWin(GameResults* stack, int elementToAdd, int roundWon, char addPlayerName[])
+void pushPlayerWin(GameResults* stack, char addPlayerName[])
 {
 	if (isResultsStackFull(stack))
 	{
 		printf("\nStack Overflow Exception\n");
 		exit(EXIT_FAILURE);
 	}
+	strcpy(stack->playerName[++stack->stackSize], addPlayerName);
+	//stack->score[++stack->stackSize] = elementToAdd;
+	stack->score[stack->stackSize]++;
 
-	stack->score[++stack->stackSize] = elementToAdd;
-	//stack->roundNumberWon[stack->stackSize] = roundWon + 1;
-	strcpy(stack->playerName[stack->stackSize], addPlayerName);
 
 
 	// stack->playerName[++stack->stackSize] = elementToAdd;
@@ -198,27 +198,18 @@ bool isResultsStackFull(GameResults* stack)
 	return stack->stackSize == NUMBER_OF_ROUNDS;
 }
 
-void testCalculateWinner(PlayerTurnList* players)
+void testCalculateWinner(GameResults* games)
 {
-	int winningNumber = 0;
-	char winningName[MAX_STRING_SIZE] = { "\0" };
-	PlayerTurnList* currentPlayer = players;
-	while (currentPlayer->NextNode != NULL)
-	{
-		if (currentPlayer->numberOfWins > currentPlayer->NextNode->numberOfWins)
-		{
-			winningNumber = currentPlayer->numberOfWins;
-			strcpy(winningName, currentPlayer->playerName);
-		}
 
-		else
-		{
-			winningNumber = currentPlayer->NextNode->numberOfWins;
-			strcpy(winningName, currentPlayer->NextNode->playerName);
-		}
-		currentPlayer = currentPlayer->NextNode;
-	}
-	printf("TEST OUT: \n\nWINNER:\nName: %s\nNumber of wins: %d\n\n", winningName, winningNumber);
+	GameResults* currentGame = games;
+	int stackIndex = 0;
+	do
+	{
+		printf("WINNERS:\n");
+		printf("Name: %s", games->playerName[stackIndex]);
+		stackIndex++;
+	} while (stackIndex != games->stackSize);
+	//printf("TEST OUT: \n\nWINNER:\nName: %s\nNumber of wins: %d\n\n", winningName, winningNumber);
 }
 
 
@@ -284,12 +275,15 @@ int main(void)
 
 	// Actual round being played
 	int roundNumber = 0;
+	int winningNumber = 0; // Storage for each rounds winning number
+	char winningName[MAX_STRING_SIZE] = { "\0" }; // Storage for each rounds winning name
 	while (roundNumber != NUMBER_OF_ROUNDS) // Continue based on number of rounds
 	{
 		printf("\nDoing turn: %d!\n", roundNumber + 1); // Count the turns
-
-		int winningNumber = 0; // Storage for each rounds winning number
-		char winningName[MAX_STRING_SIZE] = { "\0" }; // Storage for each rounds winning name
+		winningNumber = 0;
+		strcpy(winningName, "\0");
+		//int winningNumber = 0; // Storage for each rounds winning number
+		//char winningName[MAX_STRING_SIZE] = { "\0" }; // Storage for each rounds winning name
 
 		PlayerTurnList* currentTurn = head; // To iterate over the players in the turn list
 
@@ -327,7 +321,7 @@ int main(void)
 		{
 			if (strcmp(checkingWinner->playerName, winningName) == 0)
 			{
-				checkingWinner->numberOfWins++;
+				checkingWinner->numberOfRoundsWon++;
 			}
 			checkingWinner = checkingWinner->NextNode;
 		}
@@ -340,14 +334,28 @@ int main(void)
 		printf("Round Winner: %s, winning value: %d\n", winningName, winningNumber); // Who won the round?
 
 		// Code here for pushing the wins onto the stack ---------------------------------------------------
-		pushPlayerWin(gameResultStack, winningNumber, roundNumber, winningName);
+		//pushPlayerWin(gameResultStack, winningNumber, roundNumber, winningName);
 
 
 
 		roundNumber++; // Increment the round number
 	}
+
+	PlayerTurnList* currentPlayer = head;
+
+	while (currentPlayer != NULL)
+	{
+		if (strcmp(currentPlayer->playerName, winningName) == 0)
+		{
+			pushPlayerWin(gameResultStack, winningName);
+		}
+		currentPlayer = currentPlayer->NextNode;
+	}
+
 	printf("Game Results:\n");
-	testCalculateWinner(head);
+
+	printf("Stack: %d", peekPlayerWins(gameResultStack));
+	//testCalculateWinner(head);
 	//printPlayerWinsStack(gameResultStack, head, numberOfPlayers);
 	printf("Wtf?...");
 
@@ -389,7 +397,7 @@ PlayerTurnList* createNewPlayer(int newPlayerRotationNumber, char playerName[])
 	}
 
 	newPlayerNode->playerRotationNumber = newPlayerRotationNumber;
-	newPlayerNode->numberOfWins = 0;
+	newPlayerNode->numberOfRoundsWon = 0;
 	strcpy(newPlayerNode->playerName, playerName);
 	newPlayerNode->NextNode = NULL;
 	return newPlayerNode;
