@@ -66,7 +66,7 @@ GameResults* initializeGameResultsStack(void);
 void pushPlayerWin(GameResults* stack, int elementToAdd, int roundWon, char addPlayerName[]);
 int popPlayerWins(GameResults* stack);
 int peekPlayerWins(GameResults* stack);
-void printPlayerWinsStack(GameResults* stack);
+void printPlayerWinsStack(GameResults* resultStack, PlayerTurnList* playerCircular, int playerCount);
 bool isResultsStackEmpty(GameResults* stack);
 bool isResultsStackFull(GameResults* stack);
 
@@ -165,26 +165,26 @@ int peekPlayerWins(GameResults* stack)
 	return stack->score[stack->stackSize];
 }
 
-void printPlayerWinsStack(GameResults* resultStack, PlayerTurnList* playerStack)
+void printPlayerWinsStack(GameResults* resultStack, PlayerTurnList* playerCircular, int playerCount)
 {
+	int winner[2] = { 0, 0 };
 
 	if (isResultsStackEmpty(resultStack))
 	{
 		printf("\nNo results to print.\n");
+		return;
 	}
-	else
+
+
+	printf("\n---PrintOut:---\n");
+	for (int i = 0; i < resultStack->stackSize; i++)
 	{
-		printf("\n---PrintOut:---\n");
-		for (int i = 0; i < resultStack->stackSize + 1; i++)
-		{
-
-			printf("Round # %d\n", resultStack->roundNumberWon[i]);
-			printf("Name: %s\n", resultStack->playerName[i]);
-			printf("Score: %d\n", resultStack->score[i]);
-		}
-
-		//int topOfStack = stack->score;
+		printf("Round # %d\n", resultStack->roundNumberWon[i] + 1);
+		printf("Name: %s\n", resultStack->playerName[i]);
+		printf("Score: %d\n", resultStack->score[i]);
+		printf("STACK TEST: %s", playerCircular->playerName);
 	}
+
 }
 
 bool isResultsStackEmpty(GameResults* stack)
@@ -313,7 +313,7 @@ int main(void)
 		roundNumber++; // Increment the round number
 	}
 	printf("Game Results:\n");
-	printPlayerWinsStack(gameResultStack);
+	printPlayerWinsStack(gameResultStack, head, numberOfPlayers);
 	printf("Wtf?...");
 
 	// Free up the memory
