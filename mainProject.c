@@ -307,84 +307,90 @@ int main(void)
 	int winningNumber = 0; // Storage for each rounds winning number
 	char winningName[MAX_STRING_SIZE] = { "\0" }; // Storage for each rounds winning name
 	char loopYN = 'N';
-	while (loopYN == 'N')
+	do
 	{
-
-	}
-	while (roundNumber != NUMBER_OF_ROUNDS) // Continue based on number of rounds
-	{
-		printf("\nDoing turn: %d!\n", roundNumber + 1); // Count the turns
-		winningNumber = 0;
-		strcpy(winningName, "\0");
-		//int winningNumber = 0; // Storage for each rounds winning number
-		//char winningName[MAX_STRING_SIZE] = { "\0" }; // Storage for each rounds winning name
-
-		PlayerTurnList* currentTurn = head; // To iterate over the players in the turn list
-
-		while (currentTurn != NULL) // do/while until the currentTurn is = to the head (linked list)
+		roundNumber = 0;
+		printf("The GAME starts here\n\n");
+		while (roundNumber != NUMBER_OF_ROUNDS) // Continue based on number of rounds
 		{
-			// Debug printout
-			printf("Player %s, value popped: %d\n", currentTurn->playerName, peek(currentTurn->generatedRolls));
+			printf("\nDoing turn: %d!\n", roundNumber + 1); // Count the turns
+			winningNumber = 0;
+			strcpy(winningName, "\0");
+			//int winningNumber = 0; // Storage for each rounds winning number
+			//char winningName[MAX_STRING_SIZE] = { "\0" }; // Storage for each rounds winning name
 
-			// If the winning number is less than the CURRENT players first roll
-			if (winningNumber < peek(currentTurn->generatedRolls))
+			PlayerTurnList* currentTurn = head; // To iterate over the players in the turn list
+
+			while (currentTurn != NULL) // do/while until the currentTurn is = to the head (linked list)
 			{
-				// Pop the number off of their stack, and save it and their name
-				winningNumber = pop(currentTurn->generatedRolls);
-				strcpy(winningName, currentTurn->playerName);
-				//currentTurn->numberOfWins++;
-			}
+				// Debug printout
+				printf("Player %s, value popped: %d\n", currentTurn->playerName, peek(currentTurn->generatedRolls));
 
-			// Otherwise their number was not the winning number, just pop their value so it's removed
-			else
+				// If the winning number is less than the CURRENT players first roll
+				if (winningNumber < peek(currentTurn->generatedRolls))
+				{
+					// Pop the number off of their stack, and save it and their name
+					winningNumber = pop(currentTurn->generatedRolls);
+					strcpy(winningName, currentTurn->playerName);
+					//currentTurn->numberOfWins++;
+				}
+
+				// Otherwise their number was not the winning number, just pop their value so it's removed
+				else
+				{
+					pop(currentTurn->generatedRolls);
+				}
+
+				if (currentTurn->NextNode != NULL)
+				{
+					printf("Press any key to see %s's roll!\n", currentTurn->NextNode->playerName);
+					waitForInput();
+				}
+
+				currentTurn = currentTurn->NextNode; // Step into the next player
+			} /*while (currentTurn != NULL)*/;
+
+			PlayerTurnList* checkingWinner = head;
+			while (checkingWinner != NULL)
 			{
-				pop(currentTurn->generatedRolls);
+				if (strcmp(checkingWinner->playerName, winningName) == 0)
+				{
+					checkingWinner->numberOfRoundsWon++;
+				}
+				checkingWinner = checkingWinner->NextNode;
 			}
+			// Conversion of integer winning number to a string to get the hash value
+			char numToStr[3] = { "\0" };
+			sprintf(numToStr, "%d", winningNumber);
+			//getHashName(numToStr, hashTable);
+			printf("%s DESTROYED everyone with a : %s\n", winningName, searchHashTable(diceRollHashTable, convertIntToString(winningNumber)));/*getHashName(numToStr, hashTable)*/
 
-			if (currentTurn->NextNode != NULL)
-			{
-				printf("Press any key to see %s's roll!\n", currentTurn->NextNode->playerName);
-				waitForInput();
-			}
+			printf("Round Winner: %s, winning value: %d\n", winningName, winningNumber); // Who won the round?
 
-			currentTurn = currentTurn->NextNode; // Step into the next player
-		} /*while (currentTurn != NULL)*/;
+			// Code here for pushing the wins onto the stack ---------------------------------------------------
+			//pushPlayerWin(gameResultStack, winningNumber, roundNumber, winningName);
 
-		PlayerTurnList* checkingWinner = head;
-		while (checkingWinner != NULL)
-		{
-			if (strcmp(checkingWinner->playerName, winningName) == 0)
-			{
-				checkingWinner->numberOfRoundsWon++;
-			}
-			checkingWinner = checkingWinner->NextNode;
+
+
+			roundNumber++; // Increment the round number
 		}
-		// Conversion of integer winning number to a string to get the hash value
-		char numToStr[3] = { "\0" };
-		sprintf(numToStr, "%d", winningNumber);
-		//getHashName(numToStr, hashTable);
-		printf("%s DESTROYED everyone with a : %s\n", winningName, searchHashTable(diceRollHashTable, convertIntToString(winningNumber)));/*getHashName(numToStr, hashTable)*/
 
-		printf("Round Winner: %s, winning value: %d\n", winningName, winningNumber); // Who won the round?
+		PlayerTurnList* currentPlayer = head;
 
-		// Code here for pushing the wins onto the stack ---------------------------------------------------
-		//pushPlayerWin(gameResultStack, winningNumber, roundNumber, winningName);
-
-
-
-		roundNumber++; // Increment the round number
-	}
-
-	PlayerTurnList* currentPlayer = head;
-
-	while (currentPlayer != NULL)
-	{
-		if (strcmp(currentPlayer->playerName, winningName) == 0)
+		while (currentPlayer != NULL)
 		{
-			pushPlayerWin(gameResultStack, winningName);
+			if (strcmp(currentPlayer->playerName, winningName) == 0)
+			{
+				pushPlayerWin(gameResultStack, winningName);
+			}
+			currentPlayer = currentPlayer->NextNode;
 		}
-		currentPlayer = currentPlayer->NextNode;
-	}
+
+		// accept input here to loop
+		printf("\n\nDo you want to play again? (Y/N): ");
+
+	} while (getch() != 110); 
+
 
 	printf("Game Results:\n");
 
@@ -393,16 +399,16 @@ int main(void)
 	//printPlayerWinsStack(gameResultStack, head, numberOfPlayers);
 	printf("Wtf?...");
 
-	// Free up the memory
-	PlayerTurnList* freeTurns = head;
-	while (freeTurns != NULL)
-	{
-		free(freeTurns->generatedRolls);
-		PlayerTurnList* temp = freeTurns;
-		freeTurns = freeTurns->NextNode;
-		free(temp);
-	}
-	free(diceRollHashTable);
+	//// Free up the memory
+	//PlayerTurnList* freeTurns = head;
+	//while (freeTurns != NULL)
+	//{
+	//	free(freeTurns->generatedRolls);
+	//	PlayerTurnList* temp = freeTurns;
+	//	freeTurns = freeTurns->NextNode;
+	//	free(temp);
+	//}
+	//free(diceRollHashTable);
 
 	return 0;
 }
