@@ -9,7 +9,7 @@
 #define MAX_STRING_SIZE 151
 #define MAX_NUM_PLAYERS 4
 #define MAX_DIE_SIDES 10
-#define NUMBER_OF_ROUNDS 17
+#define NUMBER_OF_ROUNDS 5
 #define HASH_TABLE_SIZE 20
 
 // Player Turn List (circular array)
@@ -17,6 +17,7 @@ typedef struct PlayerTurnList
 {
 	int playerRotationNumber;
 	char playerName[MAX_STRING_SIZE];
+	int numberOfWins;
 	struct PlayerRolls* generatedRolls;
 	struct PlayerTurnList* NextNode;
 } PlayerTurnList;
@@ -24,7 +25,7 @@ typedef struct PlayerTurnList
 typedef struct GameResults // Used for storing the game results
 {
 	int* score;
-	int* roundNumberWon;
+	//int* roundNumberWon;
 	char* playerName[MAX_STRING_SIZE];
 	int stackSize;
 } GameResults;
@@ -114,12 +115,12 @@ GameResults* initializeGameResultsStack(void)
 		}
 	}
 
-	stack->roundNumberWon = (int*)malloc(sizeof(int) * NUMBER_OF_ROUNDS);
-	if (stack->roundNumberWon == NULL)
-	{
-		printf("Out of memory!\n");
-		exit(EXIT_FAILURE);
-	}
+	//stack->roundNumberWon = (int*)malloc(sizeof(int) * NUMBER_OF_ROUNDS);
+	//if (stack->roundNumberWon == NULL)
+	//{
+	//	printf("Out of memory!\n");
+	//	exit(EXIT_FAILURE);
+	//}
 
 
 	stack->stackSize = -1;
@@ -136,7 +137,7 @@ void pushPlayerWin(GameResults* stack, int elementToAdd, int roundWon, char addP
 	}
 
 	stack->score[++stack->stackSize] = elementToAdd;
-	stack->roundNumberWon[stack->stackSize] = roundWon + 1;
+	//stack->roundNumberWon[stack->stackSize] = roundWon + 1;
 	strcpy(stack->playerName[stack->stackSize], addPlayerName);
 
 
@@ -179,7 +180,7 @@ void printPlayerWinsStack(GameResults* resultStack, PlayerTurnList* playerCircul
 	printf("\n---PrintOut:---\n");
 	for (int i = 0; i < resultStack->stackSize; i++)
 	{
-		printf("Round # %d\n", resultStack->roundNumberWon[i] + 1);
+		//printf("Round # %d\n", resultStack->roundNumberWon[i] + 1);
 		printf("Name: %s\n", resultStack->playerName[i]);
 		printf("Score: %d\n", resultStack->score[i]);
 		printf("STACK TEST: %s", playerCircular->playerName);
@@ -195,6 +196,29 @@ bool isResultsStackEmpty(GameResults* stack)
 bool isResultsStackFull(GameResults* stack)
 {
 	return stack->stackSize == NUMBER_OF_ROUNDS;
+}
+
+void testCalculateWinner(PlayerTurnList* players)
+{
+	int winningNumber = 0;
+	char winningName[MAX_STRING_SIZE] = { "\0" };
+	PlayerTurnList* currentPlayer = players;
+	while (currentPlayer->NextNode != NULL)
+	{
+		if (currentPlayer->numberOfWins > currentPlayer->NextNode->numberOfWins)
+		{
+			winningNumber = currentPlayer->numberOfWins;
+			strcpy(winningName, currentPlayer->playerName);
+		}
+
+		else
+		{
+			winningNumber = currentPlayer->NextNode->numberOfWins;
+			strcpy(winningName, currentPlayer->NextNode->playerName);
+		}
+		currentPlayer = currentPlayer->NextNode;
+	}
+	printf("TEST OUT: \n\nWINNER:\nName: %s\nNumber of wins: %d\n\n", winningName, winningNumber);
 }
 
 
@@ -269,7 +293,7 @@ int main(void)
 
 		PlayerTurnList* currentTurn = head; // To iterate over the players in the turn list
 
-		while (currentTurn != NULL) // do/while until the currentTurn is = to the head (circular linked list)
+		while (currentTurn != NULL) // do/while until the currentTurn is = to the head (linked list)
 		{
 			// Debug printout
 			printf("Player %s, value popped: %d\n", currentTurn->playerName, peek(currentTurn->generatedRolls));
@@ -280,6 +304,7 @@ int main(void)
 				// Pop the number off of their stack, and save it and their name
 				winningNumber = pop(currentTurn->generatedRolls);
 				strcpy(winningName, currentTurn->playerName);
+				//currentTurn->numberOfWins++;
 			}
 
 			// Otherwise their number was not the winning number, just pop their value so it's removed
@@ -297,6 +322,15 @@ int main(void)
 			currentTurn = currentTurn->NextNode; // Step into the next player
 		} /*while (currentTurn != NULL)*/;
 
+		PlayerTurnList* checkingWinner = head;
+		while (checkingWinner != NULL)
+		{
+			if (strcmp(checkingWinner->playerName, winningName) == 0)
+			{
+				checkingWinner->numberOfWins++;
+			}
+			checkingWinner = checkingWinner->NextNode;
+		}
 		// Conversion of integer winning number to a string to get the hash value
 		char numToStr[3] = { "\0" };
 		sprintf(numToStr, "%d", winningNumber);
@@ -313,7 +347,8 @@ int main(void)
 		roundNumber++; // Increment the round number
 	}
 	printf("Game Results:\n");
-	printPlayerWinsStack(gameResultStack, head, numberOfPlayers);
+	testCalculateWinner(head);
+	//printPlayerWinsStack(gameResultStack, head, numberOfPlayers);
 	printf("Wtf?...");
 
 	// Free up the memory
@@ -354,6 +389,7 @@ PlayerTurnList* createNewPlayer(int newPlayerRotationNumber, char playerName[])
 	}
 
 	newPlayerNode->playerRotationNumber = newPlayerRotationNumber;
+	newPlayerNode->numberOfWins = 0;
 	strcpy(newPlayerNode->playerName, playerName);
 	newPlayerNode->NextNode = NULL;
 	return newPlayerNode;
