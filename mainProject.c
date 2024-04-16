@@ -22,12 +22,18 @@ typedef struct PlayerTurnList
 	struct PlayerTurnList* NextNode;
 } PlayerTurnList;
 
-typedef struct GameResults // Used for storing the game results
+//typedef struct GameResults // Used for storing the game results
+//{
+//	int* score;
+//	char* playerName[MAX_STRING_SIZE];
+//	int topIndex;
+//} GameResults;
+
+typedef struct GameResults
 {
-	//int* score;
-	int* score;
-	char* playerName[MAX_STRING_SIZE];
-	int stackSize;
+	int score[MAX_DIE_SIDES]; // Array to store scores for each round
+	char playerName[MAX_NUM_PLAYERS][MAX_STRING_SIZE]; // Array to store player names
+	int topIndex; // Index to track the top of the stack
 } GameResults;
 
 // Player rolls stacks (stack)
@@ -86,10 +92,8 @@ void setupPlayerNames(char nameArray[][MAX_STRING_SIZE], int playerCount);
 int randomNumberGenerator();
 void insertNewPlayerSorted(int newPlayerRotationNumber, char playerName[], PlayerTurnList** head, PlayerTurnList** tail);
 
-
 GameResults* initializeGameResultsStack(void)
 {
-
 	GameResults* stack = (GameResults*)malloc(sizeof(GameResults));
 	if (stack == NULL)
 	{
@@ -97,36 +101,61 @@ GameResults* initializeGameResultsStack(void)
 		exit(EXIT_FAILURE);
 	}
 
-	stack->score = (int*)malloc(sizeof(int) * NUMBER_OF_ROUNDS);
-
-	if (stack->score == NULL)
+	// Initialize scores and player names
+	for (int i = 0; i < MAX_DIE_SIDES; i++)
 	{
-		printf("No memory to initialize stack data member, exiting.");
-		exit(EXIT_FAILURE);
+		stack->score[i] = 0;
+	}
+	for (int i = 0; i < MAX_NUM_PLAYERS; i++)
+	{
+		strcpy(stack->playerName[i], "");
 	}
 
-	for (int i = 0; i < MAX_STRING_SIZE; i++)
-	{
-		stack->playerName[i] = (char*)malloc(sizeof(char) * NUMBER_OF_ROUNDS);
-		if (stack->playerName[i] == NULL)
-		{
-			printf("out of memory error\n");
-			exit(EXIT_FAILURE);
-		}
-	}
-
-	//stack->score = (int*)malloc(sizeof(int) * NUMBER_OF_ROUNDS);
-	//if (stack->score == NULL)
-	//{
-	//	printf("Out of memory!\n");
-	//	exit(EXIT_FAILURE);
-	//}
-
-	//stack->score = 0;
-	stack->stackSize = -1;
+	stack->topIndex = -1;
 	return stack;
-
 }
+
+//GameResults* initializeGameResultsStack(void)
+//{
+//
+//	GameResults* stack = (GameResults*)malloc(sizeof(GameResults));
+//	if (stack == NULL)
+//	{
+//		printf("\nNo memory available! Exiting program.\n");
+//		exit(EXIT_FAILURE);
+//	}
+//
+//	stack->score = (int*)malloc(sizeof(int) * MAX_DIE_SIDES);
+//
+//
+//	if (stack->score == NULL)
+//	{
+//		printf("No memory to initialize stack data member, exiting.");
+//		exit(EXIT_FAILURE);
+//	}
+//
+//	for (int i = 0; i < MAX_STRING_SIZE; i++)
+//	{
+//		stack->playerName[i] = (char*)malloc(sizeof(char) * NUMBER_OF_ROUNDS);
+//		if (stack->playerName[i] == NULL)
+//		{
+//			printf("out of memory error\n");
+//			exit(EXIT_FAILURE);
+//		}
+//	}
+//
+//	//stack->score = (int*)malloc(sizeof(int) * NUMBER_OF_ROUNDS);
+//	//if (stack->score == NULL)
+//	//{
+//	//	printf("Out of memory!\n");
+//	//	exit(EXIT_FAILURE);
+//	//}
+//
+//	//stack->score = 0;
+//	stack->topIndex = -1;
+//	return stack;
+//
+//}
 
 void pushPlayerWin(GameResults* stack, char addPlayerName[])
 {
@@ -135,9 +164,9 @@ void pushPlayerWin(GameResults* stack, char addPlayerName[])
 		printf("\nStack Overflow Exception\n");
 		exit(EXIT_FAILURE);
 	}
-	strcpy(stack->playerName[++stack->stackSize], addPlayerName);
+	strcpy(stack->playerName[++stack->topIndex], addPlayerName);
 	//stack->score[++stack->stackSize] = elementToAdd;
-	stack->score[stack->stackSize]++;
+	stack->score[stack->topIndex]++;
 
 
 
@@ -152,7 +181,7 @@ int popPlayerWins(GameResults* stack)
 		exit(EXIT_FAILURE);
 	}
 
-	return stack->score[stack->stackSize--];
+	return stack->score[stack->topIndex--];
 }
 
 int peekPlayerWins(GameResults* stack)
@@ -163,7 +192,7 @@ int peekPlayerWins(GameResults* stack)
 		return 0;
 	}
 
-	return stack->score[stack->stackSize];
+	return stack->score[stack->topIndex];
 }
 
 void printPlayerWinsStack(GameResults* resultStack, PlayerTurnList* playerCircular, int playerCount)
@@ -178,7 +207,7 @@ void printPlayerWinsStack(GameResults* resultStack, PlayerTurnList* playerCircul
 
 
 	printf("\n---PrintOut:---\n");
-	for (int i = 0; i < resultStack->stackSize; i++)
+	for (int i = 0; i < resultStack->topIndex; i++)
 	{
 		//printf("Round # %d\n", resultStack->roundNumberWon[i] + 1);
 		printf("Name: %s\n", resultStack->playerName[i]);
@@ -190,12 +219,12 @@ void printPlayerWinsStack(GameResults* resultStack, PlayerTurnList* playerCircul
 
 bool isResultsStackEmpty(GameResults* stack)
 {
-	return stack->stackSize == -1;
+	return stack->topIndex == -1;
 }
 
 bool isResultsStackFull(GameResults* stack)
 {
-	return stack->stackSize == NUMBER_OF_ROUNDS;
+	return stack->topIndex == NUMBER_OF_ROUNDS;
 }
 
 void testCalculateWinner(GameResults* games)
@@ -208,7 +237,7 @@ void testCalculateWinner(GameResults* games)
 		printf("WINNERS:\n");
 		printf("Name: %s", games->playerName[stackIndex]);
 		stackIndex++;
-	} while (stackIndex != games->stackSize);
+	} while (stackIndex != games->topIndex);
 	//printf("TEST OUT: \n\nWINNER:\nName: %s\nNumber of wins: %d\n\n", winningName, winningNumber);
 }
 
@@ -277,6 +306,11 @@ int main(void)
 	int roundNumber = 0;
 	int winningNumber = 0; // Storage for each rounds winning number
 	char winningName[MAX_STRING_SIZE] = { "\0" }; // Storage for each rounds winning name
+	char loopYN = 'N';
+	while (loopYN == 'N')
+	{
+
+	}
 	while (roundNumber != NUMBER_OF_ROUNDS) // Continue based on number of rounds
 	{
 		printf("\nDoing turn: %d!\n", roundNumber + 1); // Count the turns
